@@ -1,10 +1,8 @@
 import { GraphQLList, GraphQLObjectType, GraphQLScalarType } from "graphql";
 import { MemberIdType, MemberType, PostType, ProfileType, UserType } from "./types/types.js";
 import { UUIDType } from "./types/uuid.js";
+import { prisma } from "./prismaClient.js";
 
-import { PrismaClient, User } from "@prisma/client";
-
-export const prisma = new PrismaClient();
 
 export const RootQuery = new GraphQLObjectType({
     name: 'Query',
@@ -44,7 +42,7 @@ export const RootQuery = new GraphQLObjectType({
             type: ProfileType,
             args: { id: { type: UUIDType } },
             resolve: async (_parent, { id }) => await prisma.profile.findUnique({ where: { id } })
-
         },
     }
 })
+
