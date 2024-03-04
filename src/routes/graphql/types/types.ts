@@ -1,7 +1,6 @@
 import { GraphQLBoolean, GraphQLEnumType, GraphQLFloat, GraphQLInputObjectType, GraphQLInt, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLString } from 'graphql';
 import { UUIDType } from "./uuid.js";
 import { MemberTypeId } from '../../member-types/schemas.js';
-import { prisma } from '../prismaClient.js';
 
 export const MemberIdType = new GraphQLEnumType({
     name: "MemberTypeId",
@@ -19,25 +18,19 @@ export const UserType = new GraphQLObjectType({
         balance: { type: GraphQLFloat },
         profile: {
             type: ProfileType,
-            resolve: async ({ id }) => await prisma.profile.findUnique({ where: { userId: id } })
+            resolve: async ({ id }, _args, { dataLoader }) => await dataLoader.profileLoader.load(id)
         },
         posts: {
             type: new GraphQLList(PostType),
-            resolve: async ({ id }) => await prisma.post.findMany({ where: { authorId: id } })
+            resolve: async ({ id }, _args, { dataLoader }) => await dataLoader.postsLoader.load(id)
         },
         userSubscribedTo: {
             type: new GraphQLList(UserType),
-            resolve: async ({ id }) => {
-                const usersId = await prisma.subscribersOnAuthors.findMany({ where: { subscriberId: id } });
-                return usersId.map(async ({ authorId: id }) => await prisma.user.findUnique({ where: { id } }));
-            }
+            resolve: async ({ id }, _args, { dataLoader }) => await dataLoader.userSubscribedToLoader.load(id)
         },
         subscribedToUser: {
             type: new GraphQLList(UserType),
-            resolve: async ({ id }) => {
-                const usersId = await prisma.subscribersOnAuthors.findMany({ where: { authorId: id } });
-                return usersId.map(async ({ subscriberId: id }) => await prisma.user.findUnique({ where: { id } }));
-            }
+            resolve: async ({ id }, _args, { dataLoader }) => await dataLoader.subscribedToUserLoader.load(id)
         }
     })
 });
@@ -53,7 +46,7 @@ export const ProfileType = new GraphQLObjectType({
         memberTypeId: { type: new GraphQLNonNull(MemberIdType) },
         memberType: {
             type: MemberType,
-            resolve: async ({ memberTypeId }) => await prisma.memberType.findUnique({ where: { id: memberTypeId } })
+            resolve: async ({ memberTypeId }, _args, { dataLoader }) => await dataLoader.memberTypeLoader.load(memberTypeId)
         },
     })
 });
